@@ -30,8 +30,7 @@ clas Flow(nn.Module):
         self.logvar0[0,2] = np.log(0.1**2)
         '''
 
-    
-    def forward(self, n, mu_pzk, var_pzk):#zmu, zlogvar, mu_pzk, var_pzk):
+    def forward(self, n, mu_pzk, var_pzk):  #  zmu, zlogvar, mu_pzk, var_pzk):
         batch_size = n#zmu.shape[0]
         sigma = torch.exp(0.5*self.logvar0)#torch.exp(0.5*zlogvar)
         zlogvar = torch.ones((n, self.D))*self.logvar0
@@ -53,18 +52,18 @@ clas Flow(nn.Module):
 
         return z0, zmu, zlogvar, z, \
                log_prob_z0, log_det, log_prob_zk
-    
+
     def _reparameterize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
         eps = torch.randn(*mu.size()).type_as(mu)
         return mu + std * eps
-    
+
     def gaussian_log_prob(self, x, mu, logvar):
         return -0.5*(math.log(2*math.pi) + logvar + (x-mu)**2/torch.exp(logvar))
-    
+
     def comp_prob(self, z, n, ind):
         # takes input n as batch size and ind as the index to compute probability on
-        
+
         sigma = torch.exp(0.5*self.logvar0)
         zmu = torch.ones((n, self.D))*self.mu0
         

@@ -1,10 +1,10 @@
-import numpy as numpy
+import numpy as np
 import math
 
 
 
 # define our forward model
-def forward_model(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, Qmin, jmin):
+def forward_model_ford_old(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, Qmin, jmin):
     # INPUTS:
     #   L       = domain length (1D)
     #   N       = number of nodes in domain
