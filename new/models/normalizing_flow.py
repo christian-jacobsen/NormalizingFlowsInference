@@ -1,9 +1,13 @@
 import torch
 import torch.nn as nn
-import numpy as np
+import sys
+
+sys.path.append('../')
+
+from models.flow_layers import *
 
 
-clas Flow(nn.Module):
+class Flow(nn.Module):
     def __init__(self, D, flow_layers, mu0, logvar0, act=nn.ReLU()):
         super().__init__()
         self.D = D
@@ -16,6 +20,9 @@ clas Flow(nn.Module):
             #else:
             #self.flow.add_module('flow%d'%(i+1), RadialFlow(D))
             
+        self.flow.add_module('flow_sigmoid', SigmoidFlow(D))
+
+
         self.mu0 = mu0
         self.logvar0 = logvar0
 
