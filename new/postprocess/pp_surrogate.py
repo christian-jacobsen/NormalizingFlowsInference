@@ -9,7 +9,7 @@ from utils.utils import *
 plt.close('all')
 
 # define the saved surrogate path
-surrogate_file = "SurrogateFNN_new1"
+surrogate_file = "SurrogateFNN_new_current1"
 surrogate_path = "../models/surrogate_models/" + surrogate_file + ".pth"
 
 # load the surrogate
