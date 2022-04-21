@@ -12,7 +12,7 @@ plt.close('all')
 
 # define the path to the model to evaluate
 load_path = "../models/nf_models/"
-model = "NF_data_current1"
+model = "NF_new5"
 
 NF, training_loss, flow_params, training_params, data, surrogate_path = load_nf(load_path + model + ".pth")
 Surrogate, _, _, _, _, surr_data = load_surrogate(surrogate_path)
@@ -71,12 +71,28 @@ for i in range(n):
 
 plt.savefig("flows/inference_data_" + model + ".png")
 
+# plot correlations
+plt.figure(figsize=(8,14))
 
+plt.subplot(3, 1, 1)
+plt.plot(z[:,0]*scales[0,0]+offset[0,0], z[:,1]*scales[0,1]+offset[0,1], 'k.')
+plt.xlabel('-log Cv')
+plt.ylabel('K')
+plt.title('Posterior Joint Samples')
 
+plt.subplot(3, 1, 2)
+plt.plot(z[:,0]*scales[0,0]+offset[0,0], z[:,2]*scales[0,2]+offset[0,2], 'k.')
+plt.xlabel('-log Cv')
+plt.ylabel('jmin')
+plt.title('Posterior Joint Samples')
 
+plt.subplot(3, 1, 3)
+plt.plot(z[:,1]*scales[0,1]+offset[0,1], z[:,2]*scales[0,2]+offset[0,2], 'k.')
+plt.xlabel('K')
+plt.ylabel('jmin')
+plt.title('Posterior Joint Samples')
 
-
-
+plt.savefig("flows/joints_" + model + ".png")
 
 
 
