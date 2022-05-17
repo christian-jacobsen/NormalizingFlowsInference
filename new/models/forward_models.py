@@ -121,7 +121,7 @@ def forward_model_ford_new(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, K, jmin):
 
     # Initialize necessary variables
     Qmin = 1e10
-    BC_anode = 0 
+    BC_anode = 0
     R_film = R_film0
     Q = 0
     h = 0
@@ -166,12 +166,14 @@ def forward_model_ford_new(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, K, jmin):
         j = j_fac*(phi[1]-phi[0])
 
         if i==1:
-            j1 = j
-        elif i==2:
-            j2 = j
-            beta = (j2-j1)/dt
-            j0 = j1 - beta*dt
+            #j1 = j
+            beta = j/dt
             Qmin = (81/(128*beta))**(1/3)*(K**(4/3))
+        #elif i==2:
+            #j2 = j
+            #beta = (j2-j1)/dt
+            #j0 = j1 - beta*dt
+            #Qmin = (81/(128*beta))**(1/3)*(K**(4/3))
 
         Q = Q + j*dt
 
@@ -187,7 +189,7 @@ def forward_model_ford_new(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, K, jmin):
             rho_j = np.maximum(8e6*np.exp(-0.1*j),2e6) # resistivity of film
             R_film = R_film + rho_j*Cv*j*dt # film resistance        
         '''
-        
+
         if (t + dt - nextTime <= 0):
             dt = dt0
         else:
@@ -411,12 +413,14 @@ class torch_forward(nn.Module):
                 j[i] = j_fac*(phi[i-1,1]-phi[i-1,0])
                 
                 if i==1:
-                    j1 = j[i]
-                elif i == 2:
-                    j2 = j[i]
-                    beta = (j2 - j1)/dt
-                    j0 = j1 - beta*dt
+                    #j1 = j[i]
+                    beta = j/dt
                     Qmin = (81/(128*beta))**(1/3)*(K[k]**(4/3))
+                #elif i == 2:
+                    #j2 = j[i]
+                    #beta = (j2 - j1)/dt
+                    #j0= j1 - beta*dt
+                    #Qmin = (81/(128*beta))**(1/3)*(K[k]**(4/3))
                 Q[i] = Q[i-1] + j[i]*dt
 
                 '''
