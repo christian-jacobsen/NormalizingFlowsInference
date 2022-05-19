@@ -126,9 +126,9 @@ def forward_model_ford_new(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, K, jmin):
     Q = 0
     h = 0
     i = 0
-    Resistance = np.zeros((math.floor(tFinal)+1,1))
-    Thickness  = np.zeros((math.floor(tFinal)+1,1))
-    Current    = np.zeros((math.floor(tFinal)+1,1))
+    Resistance = np.zeros((10*(tFinal)+1,1))
+    Thickness  = np.zeros((10*(tFinal)+1,1))
+    Current    = np.zeros((10*(tFinal)+1,1))
 
     h_x = L/(N-1)
     e = np.ones((N,1))
@@ -149,7 +149,9 @@ def forward_model_ford_new(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, K, jmin):
     dt0 = dt
     nextTime = 1
     chk_tol = dt/10
-    while (t<tFinal):
+    tind = 0
+    count = 0
+    while (t<=tFinal):
         i += 1
         BC_anode = BC_anode + VR*dt
         BC_anode = np.minimum(BC_anode, 300)
@@ -190,19 +192,25 @@ def forward_model_ford_new(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, K, jmin):
             R_film = R_film + rho_j*Cv*j*dt # film resistance        
         '''
 
-        if (t + dt - nextTime <= 0):
-            dt = dt0
-        else:
-            dt = nextTime - t
+        #if (t + dt - nextTime <= 0):
+            #dt = dt0
+        #else:
+            #dt = nextTime - t
 
-        t += dt
+        t += dt0
 
-        if (np.mod(t,1)==0):
-            tind = int(np.rint(t))
+        #if (np.mod(t,0.1)==0):
+        if count==9:
+            #print('hit')
+            #tind = int(np.rint(t))
+            tind += 1
             Resistance[tind,0] = R_film
             Thickness[tind,0] = h
             Current[tind,0] = j
             nextTime += 1
+            count = 0
+        else:
+            count += 1
 
     return Thickness, Resistance, Current
 

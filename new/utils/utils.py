@@ -67,3 +67,15 @@ def load_nf(file_path):
     surrogate_path = config['surrogate_path']
 
     return NF, training_loss, flow_params, training_params, data, surrogate_path
+
+def fill_data(data, pred):
+    # this function deals with the fact that we have different ending times for each experiment 
+    # Any missing data is filled with the prediction data such that it will not effect the likelihood
+
+    n_data = np.shape(data)[0]
+    data_filled = data + 0.
+
+    for i in range(n_data):
+        data_filled[i, np.isnan(data[i, :])] = pred[0, np.isnan(data[i, :])]
+
+    return data_filled
