@@ -316,14 +316,15 @@ def forward_model_ford_new_unident(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, K, jmin)
 
         t += dt
 
-        if (np.mod(t,1)==0):
+        if (np.mod(t, 1) == 0):
             tind = int(np.rint(t))
-            Resistance[tind,0] = R_film
-            Thickness[tind,0] = h
-            Current[tind,0] = j
+            Resistance[tind, 0] = R_film
+            Thickness[tind, 0] = h
+            Current[tind, 0] = j
             nextTime += 1
 
     return Thickness, Resistance, Current
+
 
 class torch_forward(nn.Module):
     def __init__(self, L, N, dt, tFinal, Sigma, R_film0, VR):
@@ -336,7 +337,7 @@ class torch_forward(nn.Module):
         self.Sigma = Sigma
         self.R_film0 = R_film0
         self.VR = VR
-        
+
     def forward(self, z):
         # Define all of the parameters
         Sigma = self.Sigma
