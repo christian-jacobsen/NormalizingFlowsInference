@@ -14,7 +14,7 @@ with open(load_path, 'rb') as f:
     theta_v = np.load(f)
     N = np.load(f)
 
-save_folder = "./bayes_post/"+str(N)
+save_folder = "./bayes_post/"+str(N)+"_all"
 if not(os.path.exists(save_folder)):
     print("CREATING FOLDER: " + save_folder)
     os.mkdir(save_folder)
@@ -129,7 +129,7 @@ plt.ylabel(r'$j_{min}$')
 plt.savefig(save_folder+"/joints.png")
 
 # plot 3D scatter
-thresh = -5e6
+thresh = -5e7
 log_post = np.reshape(log_post, (-1,))
 fig = plt.figure(5, figsize=(7, 7))
 ax = fig.gca(projection='3d')

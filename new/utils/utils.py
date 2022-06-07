@@ -1,10 +1,22 @@
 import torch
 import sys
+import pandas as pd
+import numpy as np
 
 sys.path.append('../')
 
 from models.surrogates import *
 from models.normalizing_flow import *
+
+def load_data(load_path, sheet, n_data):
+    # load data from .xlsx at load_path with sheet_name
+    dataM = pd.read_excel(load_path, sheet_name=sheet)
+    dataM = np.array(dataM)
+
+    data = np.transpose(dataM[:, 5:5+n_data])
+    std = np.reshape(dataM[:, 2], (1, -1))
+
+    return data, std
 
 def save_surrogate(surrogate_params, surrogate_model, forward_model, training_params, training_loss, data, save_dir, file_name):
     # save the surrogate model with parameters surrogate_params and configuration

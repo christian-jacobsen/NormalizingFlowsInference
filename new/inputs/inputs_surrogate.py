@@ -16,7 +16,7 @@ data_path = './'
 forward_model = {'name': 'forward_model_ford_new',
                  'L': 0.0254,
                  'N': 11,
-                 'dt': 0.01,
+                 'dt': 0.1,
                  'tFinal': 50,
                  'Sigma': 0.14,
                  'R_film0': 0.5,
