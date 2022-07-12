@@ -43,3 +43,25 @@ class SurrogateFNN(nn.Module):
 
     def forward(self, x):
         return self.FNN(x)
+
+
+class Surrogate(nn.Module):
+    def __init__(self, input_size, output_size, nodes, act):
+        super(Surrogate, self).__init__()
+
+        modules = []
+        modules.append( nn.Linear(input_size, nodes[0]) )
+        modules.append( act )
+        self.layers = len(nodes)
+
+        for i in range(self.layers-1):
+            modules.append( nn.Linear(nodes[i], nodes[i+1]) )
+            modules.append( act)
+        modules.append(nn.Linear(nodes[self.layers-1], output_size)) #output w, u, b at each transformation
+        modules.append(nn.ReLU())
+
+        self.surrogate_predict    =   nn.Sequential(*modules)
+
+    def forward(self, x):
+        output = self.surrogate_predict(x)
+        return output

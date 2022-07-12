@@ -7,14 +7,14 @@ sys.path.append("../")
 
 
 
-load_path = "../bayes_posterior/posterior20.npy"
+load_path = "../bayes_posterior/posterior20surrogate.npy"
 
 with open(load_path, 'rb') as f:
     log_post = np.load(f)
     theta_v = np.load(f)
     N = np.load(f)
 
-save_folder = "./bayes_post/"+str(N)+"_all"
+save_folder = "./bayes_post/"+str(N)+"_surrogate"
 if not(os.path.exists(save_folder)):
     print("CREATING FOLDER: " + save_folder)
     os.mkdir(save_folder)

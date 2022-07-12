@@ -338,7 +338,7 @@ for i in range(n_params):
     '''
 
     # surrogate models
-    t_in = (torch.arange(0.1, tFinal_0_5mA+0.1, 0.1).reshape((-1, 1)).float() - 150.48703708) / 86.60500884
+    t_in = (torch.arange(0, tFinal_0_5mA+0.1, 0.1).reshape((-1, 1)).float() - 150.48703708) / 86.60500884
     Cur = 1e-3*surr_0_5mA_cur(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1)).detach().numpy()
     Res = 1e2*surr_0_5mA_res(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1)).detach().numpy()
 
