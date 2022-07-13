@@ -91,3 +91,15 @@ def fill_data(data, pred):
         data_filled[i, np.isnan(data[i, :])] = pred[0, np.isnan(data[i, :])]
 
     return data_filled
+
+def fill_data_torch(data, pred):
+    # this function deals with the fact that we have different ending times for each experiment 
+    # Any missing data is filled with the prediction data such that it will not effect the likelihood
+
+    n_data = np.shape(data)[0]
+    data_filled = data + 0.
+
+    for i in range(n_data):
+        data_filled[i, torch.isnan(data[i, :])] = pred[0, torch.isnan(data[i, :])]
+
+    return data_filled

@@ -15,9 +15,9 @@ from models.forward_models import *
 from utils.utils import *
 
 # define the inferred parameters
-Cv = 10**(-7.5)
-K = 35
-jmin = 0.15
+Cv = 10**(-7.32)
+K = 45.26
+jmin = 0.53
 
 # import all of the data for all experiments
 n_data_1V = 13

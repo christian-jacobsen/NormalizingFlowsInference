@@ -20,7 +20,7 @@ class Flow(nn.Module):
             #else:
             #self.flow.add_module('flow%d'%(i+1), RadialFlow(D))
             
-        self.flow.add_module('flow_sigmoid', SigmoidFlow(D))
+        #self.flow.add_module('flow_sigmoid', SigmoidFlow(D))
 
 
         self.mu0 = mu0

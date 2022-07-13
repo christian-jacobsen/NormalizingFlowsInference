@@ -12,7 +12,7 @@ plt.close('all')
 
 # define the path to the model to evaluate
 load_path = "../models/nf_models/"
-model = "NF_new5"
+model = "NF_ALLEXP_OLD_1"
 
 NF, training_loss, flow_params, training_params, data, surrogate_path = load_nf(load_path + model + ".pth")
 Surrogate, _, _, _, _, surr_data = load_surrogate(surrogate_path)
@@ -24,11 +24,15 @@ n_samples_post = 50000
 
 _, _, _, z, _, _, _ = NF.forward(n_samples_post, flow_params['mu_prior'], flow_params['var_prior'])
 
+
 D = flow_params['D']
 nbins = 100
 
 l_lim = np.array([6.95, 36.75, 0.95])
 r_lim = np.array([7.05, 37.25, 1.05])
+
+scales = np.array([0.44, 0.44, 22])
+offset = np.array([1, 7, 50])
 
 z = z.cpu().detach().numpy()
 
@@ -38,7 +42,7 @@ for i in range(D):
     #plt.xlim(l_lim[i], r_lim[i])
     #plot_z = z[z[:,i] < r_lim[i],i]
     #plot_z = plot_z[plot_z > l_lim[i]]
-    plt.hist(z[:, i]*scales[0, i] + offset[0, i], bins = nbins)
+    plt.hist(z[:, i]*scales[i] + offset[i], bins = nbins)
     plt.title("Posterior Samples Histogram")
 
 plt.savefig("flows/posterior_samples_" + model + ".png")
