@@ -12,7 +12,7 @@ plt.close('all')
 
 # define the path to the model to evaluate
 load_path = "../models/nf_models/"
-model = "NF_ALLEXP_OLD_1"
+model = "NF_ALLEXP_1"
 
 NF, training_loss, flow_params, training_params, data, surrogate_path = load_nf(load_path + model + ".pth")
 Surrogate, _, _, _, _, surr_data = load_surrogate(surrogate_path)
@@ -31,8 +31,8 @@ nbins = 100
 l_lim = np.array([6.95, 36.75, 0.95])
 r_lim = np.array([7.05, 37.25, 1.05])
 
-scales = np.array([0.44, 0.44, 22])
-offset = np.array([1, 7, 50])
+scales = np.array([0.44, 0.44, 66])
+offset = np.array([1, 7, 150])
 
 z = z.cpu().detach().numpy()
 
