@@ -15,9 +15,9 @@ from models.forward_models import *
 from utils.utils import *
 
 # define the inferred parameters
-Cv = 10**(-7.32)
-K = 45.26
-jmin = 0.53
+Cv = 10**(-7.3351)
+K = 44.42
+jmin = 0.5993
 
 # import all of the data for all experiments
 n_data_1V = 13
@@ -52,6 +52,28 @@ load_path = "../data/experimental/CC_1mA.xlsx"
 data_1mA_cur, std_1mA_cur = load_data(load_path, "CC_1mA_Current", n_data_1mA)
 data_1mA_res, std_1mA_res = load_data(load_path, "CC_1mA_Resistance", n_data_1mA)
 data_1mA_vol, std_1mA_vol = load_data(load_path, "CC_1mA_Voltage", n_data_1mA)
+
+# define the data variance
+CD_1V_cur = std_1V_cur**2#np.ones((1, np.shape(data)[1]))
+CD_1V_res = std_1V_res**2
+
+CD_0_5V_cur = std_0_5V_cur**2
+CD_0_5V_res = std_0_5V_res**2
+
+CD_0_125V_cur = std_0_125V_cur**2
+CD_0_125V_res = std_0_125V_res**2
+
+CD_0_5mA_cur = std_0_5mA_cur**2
+CD_0_5mA_res = std_0_5mA_res**2
+CD_0_5mA_vol = std_0_5mA_vol**2
+
+CD_0_75mA_cur = std_0_75mA_cur**2
+CD_0_75mA_res = std_0_75mA_res**2
+CD_0_75mA_vol = std_0_75mA_vol**2
+
+CD_1mA_cur = std_1mA_cur**2
+CD_1mA_res = std_1mA_res**2
+CD_1mA_vol = std_1mA_vol**2
 
 # define time range for each experiment
 tFinal_1V = 239
@@ -92,6 +114,22 @@ data_0_75mA_cur = data_0_75mA_cur[:, data_inds_0_75mA]
 data_0_75mA_res = data_0_75mA_res[:, data_inds_0_75mA]
 data_0_75mA_vol = data_0_75mA_vol[:, data_inds_0_75mA]
 
+CD_1V_cur = CD_1V_cur[:, data_inds_1V]
+CD_1V_res = CD_1V_res[:, data_inds_1V]
+CD_0_5V_cur = CD_0_5V_cur[:, data_inds_0_5V]
+CD_0_5V_res = CD_0_5V_res[:, data_inds_0_5V]
+CD_0_125V_cur = CD_0_125V_cur[:, data_inds_0_125V]
+CD_0_125V_res = CD_0_125V_res[:, data_inds_0_125V]
+CD_0_5mA_cur = CD_0_5mA_cur[:, data_inds_0_5mA]
+CD_0_5mA_res = CD_0_5mA_res[:, data_inds_0_5mA]
+CD_0_5mA_vol = CD_0_5mA_vol[:, data_inds_0_5mA]
+CD_0_75mA_cur = CD_0_75mA_cur[:, data_inds_0_75mA]
+CD_0_75mA_res = CD_0_75mA_res[:, data_inds_0_75mA]
+CD_0_75mA_vol = CD_0_75mA_vol[:, data_inds_0_75mA]
+CD_1mA_cur = CD_1mA_cur[:, data_inds_1mA]
+CD_1mA_res = CD_1mA_res[:, data_inds_1mA]
+CD_1mA_vol = CD_1mA_vol[:, data_inds_1mA]
+
 # now compute forward models and plot over the data
 plt.figure(1, figsize=(18, 12))
 
@@ -106,6 +144,12 @@ Cur = np.reshape(Cur, (1, -1))
 
 Res = Res[model_inds_1V, 0]/1.6e-3 
 Res = np.reshape(Res, (1, -1))
+
+data_filled = fill_data(data_1V_cur, Cur)
+log_like = np.sum(-0.5 * ((np.tile(Cur, (n_data_1V, 1)) - data_filled)**2 / np.tile(CD_1V_cur, (n_data_1V, 1))))
+
+data_filled = fill_data(data_1V_res, Res)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Res, (n_data_1V, 1)) - data_filled)**2 / np.tile(CD_1V_res, (n_data_1V, 1))))
 
 # Current
 plt.subplot(3, 4, 1)
@@ -137,6 +181,12 @@ Cur = np.reshape(Cur, (1, -1))
 Res = Res[model_inds_0_5V, 0]/1.6e-3 
 Res = np.reshape(Res, (1, -1))
 
+data_filled = fill_data(data_0_5V_cur, Cur)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Cur, (n_data_0_5V, 1)) - data_filled)**2 / np.tile(CD_0_5V_cur, (n_data_0_5V, 1))))
+
+data_filled = fill_data(data_0_5V_res, Res)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Res, (n_data_0_5V, 1)) - data_filled)**2 / np.tile(CD_0_5V_res, (n_data_0_5V, 1))))
+
 # Current
 plt.subplot(3, 4, 3)
 plt.xlabel("Time")
@@ -166,6 +216,12 @@ Cur = np.reshape(Cur, (1, -1))
 
 Res = Res[model_inds_0_125V, 0]/1.6e-3 
 Res = np.reshape(Res, (1, -1))
+
+data_filled = fill_data(data_0_125V_cur, Cur)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Cur, (n_data_0_125V, 1)) - data_filled)**2 / np.tile(CD_0_125V_cur, (n_data_0_125V, 1))))
+
+data_filled = fill_data(data_0_125V_res, Res)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Res, (n_data_0_125V, 1)) - data_filled)**2 / np.tile(CD_0_125V_res, (n_data_0_125V, 1))))
 
 # Current
 plt.subplot(3, 4, 5)
@@ -197,6 +253,12 @@ Cur = np.reshape(Cur, (1, -1))
 Res = Res[model_inds_1mA, 0]/1.6e-3 
 Res = np.reshape(Res, (1, -1))
 
+data_filled = fill_data(data_1mA_cur, Cur)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Cur, (n_data_1mA, 1)) - data_filled)**2 / np.tile(CD_1mA_cur, (n_data_1mA, 1))))
+
+data_filled = fill_data(data_1mA_res, Res)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Res, (n_data_1mA, 1)) - data_filled)**2 / np.tile(CD_1mA_res, (n_data_1mA, 1))))
+
 # Current
 plt.subplot(3, 4, 7)
 plt.xlabel("Time")
@@ -227,6 +289,12 @@ Cur = np.reshape(Cur, (1, -1))
 Res = Res[model_inds_0_75mA, 0]/1.6e-3 
 Res = np.reshape(Res, (1, -1))
 
+data_filled = fill_data(data_0_75mA_cur, Cur)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Cur, (n_data_0_75mA, 1)) - data_filled)**2 / np.tile(CD_0_75mA_cur, (n_data_0_75mA, 1))))
+
+data_filled = fill_data(data_0_75mA_res, Res)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Res, (n_data_0_75mA, 1)) - data_filled)**2 / np.tile(CD_0_75mA_res, (n_data_0_75mA, 1))))
+
 # Current
 plt.subplot(3, 4, 9)
 plt.xlabel("Time")
@@ -256,6 +324,14 @@ Cur = np.reshape(Cur, (1, -1))
 
 Res = Res[model_inds_0_5mA, 0]/1.6e-3 
 Res = np.reshape(Res, (1, -1))
+
+data_filled = fill_data(data_0_5mA_cur, Cur)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Cur, (n_data_0_5mA, 1)) - data_filled)**2 / np.tile(CD_0_5mA_cur, (n_data_0_5mA, 1))))
+
+data_filled = fill_data(data_0_5mA_res, Res)
+log_like = log_like + np.sum(-0.5 * ((np.tile(Res, (n_data_0_5mA, 1)) - data_filled)**2 / np.tile(CD_0_5mA_res, (n_data_0_5mA, 1))))
+
+print('Log-likelihood: ', log_like)
 
 # Current
 plt.subplot(3, 4, 11)

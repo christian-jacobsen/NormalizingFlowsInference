@@ -34,7 +34,7 @@ flow_params = {'flow_layers': 10,
                'use_cur_data': True    # Use current data?
                }
 
-training_params = {'epochs': 6000,
+training_params = {'epochs': 4000,
                    'MC_samples': 10,  # number of MC samples to approximate expectation
                    'use_surrogate': True,  # train with surrogate as forward model
                    'R': 1e0,  # greater R increases entropy of posterior
@@ -42,4 +42,4 @@ training_params = {'epochs': 6000,
                    }
 
 surrogate_path = "../models/surrogate_models/SurrogateFNN_new_current1.pth"  # path to load surrogate from
-save_nf_path = "../models/nf_models/NF_ALLEXP_OLD_1.pth"
+save_nf_path = "../models/vi_models/VI_ALLEXP_NEW_3.pth"

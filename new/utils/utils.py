@@ -7,6 +7,7 @@ sys.path.append('../')
 
 from models.surrogates import *
 from models.normalizing_flow import *
+from models.gaussian_vi import *
 
 def load_data(load_path, sheet, n_data):
     # load data from .xlsx at load_path with sheet_name
@@ -47,6 +48,18 @@ def save_nf(nf_state_dict, flow_params, training_params, training_loss, nf_data,
 
     torch.save(config, save_path)
 
+def save_vi(nf_state_dict, flow_params, training_params, training_loss, nf_data, surrogate_path, save_path):
+    # save the normalizing flow model
+    
+    config = {'flow_params': flow_params,
+              'flow_state_dict': nf_state_dict,
+              'training_params': training_params,
+              'training_loss': training_loss,
+              'data': nf_data,
+              'surrogate_path': surrogate_path
+              }
+
+    torch.save(config, save_path)
 
 def load_surrogate(file_path):
     config = torch.load(file_path)
@@ -80,6 +93,19 @@ def load_nf(file_path):
 
     return NF, training_loss, flow_params, training_params, data, surrogate_path
 
+def load_vi(file_path):
+    config = torch.load(file_path)
+
+    flow_params = config['flow_params']
+    NF = GaussianVI(flow_params['D'])
+    NF.load_state_dict(config['flow_state_dict'])
+    training_params = config['training_params']
+    training_loss = config['training_loss']
+    data = config['data']
+    surrogate_path = config['surrogate_path']
+
+    return NF, training_loss, flow_params, training_params, data, surrogate_path
+
 def fill_data(data, pred):
     # this function deals with the fact that we have different ending times for each experiment 
     # Any missing data is filled with the prediction data such that it will not effect the likelihood
@@ -103,3 +129,6 @@ def fill_data_torch(data, pred):
         data_filled[i, torch.isnan(data[i, :])] = pred[0, torch.isnan(data[i, :])]
 
     return data_filled
+
+def gaussian_pdf(x, mu, logv):
+    return 1/np.sqrt(2*np.pi*np.exp(logv))*np.exp(-0.5*(x-mu)**2/np.exp(logv))

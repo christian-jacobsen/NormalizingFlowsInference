@@ -214,6 +214,91 @@ def forward_model_cc_new(L, N, dt, tFinal, Sigma, R_film0, CurrentAnode, Cv, K, 
 
     return Thickness, Resistance, Current, VoltageAnode
 
+def forward_model_cc_old(L, N, dt, tFinal, Sigma, R_film0, CurrentAnode, Cv, K, jMin, VoltageMax):
+    # constant current model with (jmin-j)
+    # returned solution does NOT include the initial condition
+
+    t = 0
+    time = np.arange(dt, tFinal+dt, dt)
+    
+    #initialization
+    Q = 0
+    h = 0
+    i = -1
+    Resistance = np.zeros((len(time), 1))
+    Thickness = np.zeros((len(time), 1))
+    Current = np.zeros((len(time), 1))
+    VoltageAnode = np.zeros((len(time), 1))
+    R_film = R_film0
+    h_x = L / (N - 1)
+    
+    #Qmin as function of K
+    Qmin = K**2 / CurrentAnode
+
+    #Assemble matrix system A phi = S
+    a = np.ones(N)
+    b = np.ones(N-1)
+    A = Sigma*(-2*np.diag(a,0)+np.diag(b,-1)+np.diag(b,1))/h_x**2
+    A_factor = 2*Sigma/h_x**2
+    A[-1, -1]= - A_factor
+    A[0, 1] = A_factor
+
+    SN_N_factor = -2*CurrentAnode/h_x
+    SN_max_factor = -A_factor*VoltageMax
+
+    j_factor = Sigma/h_x
+
+    S = np.zeros((N, 1))
+    phi = np.zeros((N, 1))
+
+    while t < tFinal:
+        i += 1
+
+        if phi[-1] >= VoltageMax:
+            # apply Dirihlet boundary conditions at BC_anode
+            S[-1] = SN_max_factor
+            A[-1, -2] = 0
+
+        else:
+            # apply Neumann boundary conditions at anode
+            S[-1] = SN_N_factor
+            A[-1, -2] = A_factor
+
+        a = -R_film*Sigma
+        if a != 0.0:
+            A[0, 0] = -A_factor*(1 - h_x/a)
+            A[0, 1] = A_factor
+        else:
+            A[0, 0] = -A_factor
+            A[0, 1] = 0
+
+        phi = np.linalg.solve(A, S)
+
+        # current density at cathode
+        j = j_factor*(phi[1] - phi[0])
+
+        # charge at the cathode
+        Q = Q + dt * j
+
+        if (Q > Qmin) and (j > jMin):
+            # film thickness
+            h = np.maximum(h + dt * Cv * (j), 0)
+
+            # film resistivity
+            rho_j = np.maximum(8e6*np.exp(-0.1 * j), 2e6)
+
+            # update film resistance
+            R_film = np.maximum(R_film + dt * rho_j * Cv * (j), R_film0)
+        
+        t = time[i]
+
+        Resistance[i, 0] = R_film
+        Current[i, 0] = j
+        Thickness[i, 0] = h
+        VoltageAnode[i, 0] = phi[-1]
+
+    return Thickness, Resistance, Current, VoltageAnode
+
     
 def forward_model_ford_new(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, K, jmin):
     # Voltage ramp forward model with (jmin-j)
