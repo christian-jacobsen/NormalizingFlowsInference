@@ -341,8 +341,7 @@ def forward_model_ford_new(L,N,dt,tFinal,Sigma,R_film0, VR, Cv, K, jmin):
     Current    = np.zeros((10*(tFinal)+1,1))
 
     h_x = L/(N-1)
-    e = np.ones((N,1))
-    
+    e = np.ones((N, 1))
     # Assemble A(phi) = S
     a = np.ones(N)
     b = np.ones(N-1)

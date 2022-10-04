@@ -366,7 +366,7 @@ for epoch in range(training_params['epochs']):
 
             L = 0.5*(torch.sum(logvarp) - 3 - torch.sum(zlogvar) + torch.sum(torch.exp(zlogvar)/torch.exp(logvarp)) + torch.sum((zmu - mup)**2/torch.exp(logvarp))) - torch.mean(log_like)
 
-        loss = L
+        loss = L  # + ...
 
         if torch.isnan(loss):
             print("Loss is nan!")

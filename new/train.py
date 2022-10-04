@@ -1,0 +1,382 @@
+# Author: Christian Jacobsen, University of Michigan 2022
+# Description:
+#   Load one of the models specified for inference,
+#       and perform variational inference
+
+import sys, argparse, pickle, torch, json
+import pandas as pd
+import numpy as np
+from torch.utils.data import DataLoader, TensorDataset
+
+sys.path.append('../')
+
+from inputs.inputs_nf import *
+from models.normalizing_flow import *
+from models.forward_models import *
+from models.surrogates import *
+from utils.utils import *
+
+
+'''
+# load the surrogate model:
+print("Loading Surrogate Model ==============================")
+Surrogate, _, surrogate_config, surrogate_training, forward_model, surrogate_data = load_surrogate(surrogate_path) 
+scales = surrogate_data['scales']
+offset = surrogate_data['offset']
+'''
+
+
+def parse_args():
+    parser = argparse.ArgumentParser('Model Training')
+    parser.add_argument('--model',
+                        help='Model to train ("NF", "GVI", "func")')
+    parser.add_argument('--data_path',
+                        help='Path to the data')
+    parser.add_argument('--model_cfg',
+                        help='Path to model configuration file (.json)')
+
+    # training parameters
+    parser.add_argument('--epochs',
+                        help='Epochs (number of optimization iterations)',
+                        type=int,
+                        default=1000)
+
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+
+    # load the surrogate models or else load the forward model
+    if args.model == 'NF':
+        model = NF(...)
+    elif args.model == 'GVI':
+        model =  
+# load ALL experimental data
+# load the saved surrogate models
+'''
+surr_1V_cur = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_current_1.p", "rb" ) )
+surr_0_5V_cur = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_current_05.p", "rb") )
+surr_0_125V_cur = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_current_0125.p", "rb") )
+surr_1V_res = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_resistance_1.p", "rb" ) )
+surr_0_5V_res = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_resistance_05.p", "rb") )
+surr_0_125V_res = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_resistance_0125.p", "rb") )
+
+surr_1mA_cur = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_current_cc_1.p", "rb" ) )
+surr_0_75mA_cur = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_current_cc_075.p", "rb" ) )
+surr_0_5mA_cur = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_current_cc_05.p", "rb" ) )
+surr_1mA_res = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_resistance_cc_1.p", "rb" ) )
+surr_0_75mA_res = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_resistance_cc_075.p", "rb" ) )
+surr_0_5mA_res = pickle.load( open( "../models/surrogate_models/New_Forward_Models/model_resistance_cc_05.p", "rb" ) ) 
+'''
+surr_1V_cur = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Current_Old_1_2.p", "rb" ) )
+surr_0_5V_cur = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Current_Old_05_2.p", "rb") )
+surr_0_125V_cur = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Current_Old_0125_2.p", "rb") )
+surr_1V_res = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Resistance_Old_1_2.p", "rb" ) )
+surr_0_5V_res = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Resistance_Old_05_2.p", "rb") )
+surr_0_125V_res = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Resistance_Old_0125_2.p", "rb") )
+
+surr_1mA_cur = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Current_CC_Old_1_2.p", "rb" ) )
+surr_0_75mA_cur = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Current_CC_Old_075_2.p", "rb" ) )
+surr_0_5mA_cur = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Current_CC_Old_05_2.p", "rb" ) )
+surr_1mA_res = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Resistance_CC_Old_1_2.p", "rb" ) )
+surr_0_75mA_res = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Resistance_CC_Old_075_2.p", "rb" ) )
+surr_0_5mA_res = pickle.load( open( "../models/surrogate_models/Old_Forward_Models/model_Resistance_CC_Old_05_2.p", "rb" ) ) 
+
+# load all the data now
+# first the voltage ramp experiments
+n_data_1V = 13
+load_path = "../data/experimental/VR_1V.xlsx"
+data_1V_cur, std_1V_cur = load_data(load_path, "VR_1V_Current", n_data_1V)
+data_1V_res, std_1V_res = load_data(load_path, "VR_1V_Resistance", n_data_1V)
+
+n_data_0_5V = 13
+load_path = "../data/experimental/VR_0.5V.xlsx"
+data_0_5V_cur, std_0_5V_cur = load_data(load_path, "VR_0.5V_Current", n_data_0_5V)
+data_0_5V_res, std_0_5V_res = load_data(load_path, "VR_0.5V_Resistance", n_data_0_5V)
+
+n_data_0_125V = 12
+load_path = "../data/experimental/VR_0.125V.xlsx"
+data_0_125V_cur, std_0_125V_cur = load_data(load_path, "VR_0.125V_Current", n_data_0_125V)
+data_0_125V_res, std_0_125V_res = load_data(load_path, "VR_0.125V_Resistance", n_data_0_125V)
+
+# now constant current experiments
+n_data_0_5mA = 10
+load_path = "../data/experimental/CC_0.5mA.xlsx"
+data_0_5mA_cur, std_0_5mA_cur = load_data(load_path, "CC_0.5mA_Current", n_data_0_5mA)
+data_0_5mA_res, std_0_5mA_res = load_data(load_path, "CC_0.5mA_Resistance", n_data_0_5mA)
+data_0_5mA_vol, std_0_5mA_vol = load_data(load_path, "CC_0.5mA_Voltage", n_data_0_5mA)
+
+n_data_0_75mA = 10
+load_path = "../data/experimental/CC_0.75mA.xlsx"
+data_0_75mA_cur, std_0_75mA_cur = load_data(load_path, "CC_0.75mA_Current", n_data_0_75mA)
+data_0_75mA_res, std_0_75mA_res = load_data(load_path, "CC_0.75mA_Resistance", n_data_0_75mA)
+data_0_75mA_vol, std_0_75mA_vol = load_data(load_path, "CC_0.75mA_Voltage", n_data_0_75mA)
+
+n_data_1mA = 10
+load_path = "../data/experimental/CC_1mA.xlsx"
+data_1mA_cur, std_1mA_cur = load_data(load_path, "CC_1mA_Current", n_data_1mA)
+data_1mA_res, std_1mA_res = load_data(load_path, "CC_1mA_Resistance", n_data_1mA)
+data_1mA_vol, std_1mA_vol = load_data(load_path, "CC_1mA_Voltage", n_data_1mA)
+
+# define the data variance
+CD_1V_cur = std_1V_cur**2#np.ones((1, np.shape(data)[1]))
+CD_1V_res = std_1V_res**2
+
+CD_0_5V_cur = std_0_5V_cur**2
+CD_0_5V_res = std_0_5V_res**2
+
+CD_0_125V_cur = std_0_125V_cur**2
+CD_0_125V_res = std_0_125V_res**2
+
+CD_0_5mA_cur = std_0_5mA_cur**2
+CD_0_5mA_res = std_0_5mA_res**2
+CD_0_5mA_vol = std_0_5mA_vol**2
+
+CD_0_75mA_cur = std_0_75mA_cur**2
+CD_0_75mA_res = std_0_75mA_res**2
+CD_0_75mA_vol = std_0_75mA_vol**2
+
+CD_1mA_cur = std_1mA_cur**2
+CD_1mA_res = std_1mA_res**2
+CD_1mA_vol = std_1mA_vol**2
+
+# define the time ranges for the experiments
+tFinal_1V = 239
+tFinal_0_5V = 477
+tFinal_0_125V = 639
+tFinal_0_5mA = 240
+tFinal_0_75mA = 160
+tFinal_1mA = 80
+
+# define the prior
+mu_prior = np.array([7, 37, 2.5])
+var_prior = 0.25**2 * np.array([5**2, 20**2, 5**2])
+
+# define the indices to take so that fowrward model prediction corresponds to data times
+data_inds_1V = np.arange(0, 10*tFinal_1V+1)
+model_inds_1V = np.arange(0, 10*tFinal_1V+1)
+data_inds_0_5V = np.arange(0, 10*tFinal_0_5V+1)
+model_inds_0_5V = np.arange(0, 10*tFinal_0_5V+1)
+data_inds_0_125V = np.arange(0, 10*tFinal_0_125V+1)
+model_inds_0_125V = np.arange(0, 10*tFinal_0_125V+1)
+data_inds_1mA = np.arange(0, 10*tFinal_1mA) + 1
+model_inds_1mA = data_inds_1mA - 1
+data_inds_0_5mA = np.arange(0, 10*tFinal_0_5mA) + 1
+model_inds_0_5mA = data_inds_0_5mA - 1
+data_inds_0_75mA = np.arange(0, 10*tFinal_0_75mA) + 1
+model_inds_0_75mA = data_inds_0_75mA - 1
+
+data_1V_cur = torch.from_numpy(data_1V_cur[:, data_inds_1V]).float()
+data_1V_res = torch.from_numpy(data_1V_res[:, data_inds_1V]).float()
+data_0_5V_cur = torch.from_numpy(data_0_5V_cur[:, data_inds_0_5V]).float()
+data_0_5V_res = torch.from_numpy(data_0_5V_res[:, data_inds_0_5V]).float()
+data_0_125V_cur = torch.from_numpy(data_0_125V_cur[:, data_inds_0_125V]).float()
+data_0_125V_res = torch.from_numpy(data_0_125V_res[:, data_inds_0_125V]).float()
+data_1mA_cur = torch.from_numpy(data_1mA_cur[:, data_inds_1mA]).float()
+data_1mA_res = torch.from_numpy(data_1mA_res[:, data_inds_1mA]).float()
+data_1mA_vol = torch.from_numpy(data_1mA_vol[:, data_inds_1mA]).float()
+data_0_5mA_cur = torch.from_numpy(data_0_5mA_cur[:, data_inds_0_5mA]).float()
+data_0_5mA_res = torch.from_numpy(data_0_5mA_res[:, data_inds_0_5mA]).float()
+data_0_5mA_vol = torch.from_numpy(data_0_5mA_vol[:, data_inds_0_5mA]).float()
+data_0_75mA_cur = torch.from_numpy(data_0_75mA_cur[:, data_inds_0_75mA]).float()
+data_0_75mA_res = torch.from_numpy(data_0_75mA_res[:, data_inds_0_75mA]).float()
+data_0_75mA_vol = torch.from_numpy(data_0_75mA_vol[:, data_inds_0_75mA]).float()
+
+CD_1V_cur = torch.from_numpy(CD_1V_cur[:, data_inds_1V]).float()
+CD_1V_res = torch.from_numpy(CD_1V_res[:, data_inds_1V]).float()
+CD_0_5V_cur = torch.from_numpy(CD_0_5V_cur[:, data_inds_0_5V]).float()
+CD_0_5V_res = torch.from_numpy(CD_0_5V_res[:, data_inds_0_5V]).float()
+CD_0_125V_cur = torch.from_numpy(CD_0_125V_cur[:, data_inds_0_125V]).float()
+CD_0_125V_res = torch.from_numpy(CD_0_125V_res[:, data_inds_0_125V]).float()
+CD_0_5mA_cur = torch.from_numpy(CD_0_5mA_cur[:, data_inds_0_5mA]).float()
+CD_0_5mA_res = torch.from_numpy(CD_0_5mA_res[:, data_inds_0_5mA]).float()
+CD_0_5mA_vol = torch.from_numpy(CD_0_5mA_vol[:, data_inds_0_5mA]).float()
+CD_0_75mA_cur = torch.from_numpy(CD_0_75mA_cur[:, data_inds_0_75mA]).float()
+CD_0_75mA_res = torch.from_numpy(CD_0_75mA_res[:, data_inds_0_75mA]).float()
+CD_0_75mA_vol = torch.from_numpy(CD_0_75mA_vol[:, data_inds_0_75mA]).float()
+CD_1mA_cur = torch.from_numpy(CD_1mA_cur[:, data_inds_1mA]).float()
+CD_1mA_res = torch.from_numpy(CD_1mA_res[:, data_inds_1mA]).float()
+CD_1mA_vol = torch.from_numpy(CD_1mA_vol[:, data_inds_1mA]).float()
+
+'''
+Cur = loaded_data[:, -2]
+Cur = np.reshape(Cur, (-1, 1))
+n_data_nf = 1
+data_nf = np.reshape(Cur, (1, -1))
+'''
+
+'''
+dataset = TensorDataset(torch.tensor(data_nf).float(), torch.tensor(data_nf).float())
+dataloader = DataLoader(dataset, batch_size = n_data_nf, shuffle = False)
+'''
+
+#max_output = surrogate_data['max_output']
+
+'''
+if flow_params['use_exp_data']:
+    C_D = torch.from_numpy(np.ones((1, np.shape(data_nf)[1])))  # / max_output)
+else:
+    C_D = torch.from_numpy(np.var(data_nf / max_output, axis = 0))
+'''
+
+
+d = n_data_nf
+b = training_params['MC_samples'] 
+
+#ForwardModel = Surrogate
+
+NF = Flow(flow_params['D'], flow_params['flow_layers'], flow_params['mu0'], flow_params['logvar0'])
+Optimizer = torch.optim.Adam(NF.parameters(), lr = 1e-3)
+
+NF.train()
+
+loss_vector = np.zeros((training_params['epochs'],))
+
+R = training_params['R']
+B = training_params['B']
+R1 = 1
+
+exp_lim = 1e0
+
+print("Training the Flow =====================================")
+
+surr_inds = np.arange(0, 51)
+data_inds = np.arange(0, 501, 10)
+
+scales = torch.tensor([0.44, 0.44, 22])
+offsets = torch.tensor([1, 7, 50])
+perm = [2, 0, 1]
+
+'''
+if flow_params['use_exp_data']:
+    C_D = C_D[0, data_inds]
+'''
+
+for epoch in range(training_params['epochs']):
+    for i in range(2):#n, (_, out_d) in enumerate(dataloader):
+
+        NF.zero_grad()
+
+        lr = 0
+
+        _, _, _, z, lpz0, ld, lpzk = NF.forward(1, flow_params['mu_prior'], flow_params['var_prior'])
+
+        p_in = (z * torch.ones((10*tFinal_0_125V + 1, 3))) # - offsets ) / scales
+
+        # 1VR Experiment
+
+        t_in = (torch.arange(0, tFinal_1V+0.1, 0.1).reshape((-1, 1)).float() - 150.48703708) / 86.60500884
+        Cur = 1e-3*surr_1V_cur(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+        Res = 1e2*surr_1V_res(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+
+        data_filled = fill_data_torch(data_1V_cur, Cur)
+        log_like = torch.sum(-0.5 * ((torch.tile(Cur, (n_data_1V, 1)) - data_filled)**2 / torch.tile(CD_1V_cur, (n_data_1V, 1))))
+
+        data_filled = fill_data_torch(data_1V_res, Res)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Res, (n_data_1V, 1)) - data_filled)**2 / torch.tile(CD_1V_res, (n_data_1V, 1))))
+
+        # 0.5VR Experiment
+        t_in = (torch.arange(0, tFinal_0_5V+0.1, 0.1).reshape((-1, 1)).float() - 300.515167) / 173.204833
+        Cur = 1e-3*surr_0_5V_cur(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+        Res = 1e2*surr_0_5V_res(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+        
+        data_filled = fill_data_torch(data_0_5V_cur, Cur)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Cur, (n_data_0_5V, 1)) - data_filled)**2 / torch.tile(CD_0_5V_cur, (n_data_0_5V, 1))))
+
+        data_filled = fill_data_torch(data_0_5V_res, Res)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Res, (n_data_0_5V, 1)) - data_filled)**2 / torch.tile(CD_0_5V_res, (n_data_0_5V, 1))))
+
+        # 0.125VR Experiment
+        t_in = (torch.arange(0, tFinal_0_125V+0.1, 0.1).reshape((-1, 1)).float() - 400.470386) / 230.953803
+        Cur = 1e-3*surr_0_125V_cur(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+        Res = 1e2*surr_0_125V_res(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+
+        data_filled = fill_data_torch(data_0_125V_cur, Cur)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Cur, (n_data_0_125V, 1)) - data_filled)**2 / torch.tile(CD_0_125V_cur, (n_data_0_125V, 1))))
+
+        data_filled = fill_data_torch(data_0_125V_res, Res)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Res, (n_data_0_125V, 1)) - data_filled)**2 / torch.tile(CD_0_125V_res, (n_data_0_125V, 1))))
+
+        # 1mA Experiment
+        t_in = (torch.arange(0.1, tFinal_1mA+0.1, 0.1).reshape((-1, 1)).float() - 50.4962075) / 28.86910898
+        Cur = 1e-3*surr_1mA_cur(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+        Res = 1e2*surr_1mA_res(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+
+        data_filled = fill_data_torch(data_1mA_cur, Cur)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Cur, (n_data_1mA, 1)) - data_filled)**2 / torch.tile(CD_1mA_cur, (n_data_1mA, 1))))
+
+        data_filled = fill_data_torch(data_1mA_res, Res)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Res, (n_data_1mA, 1)) - data_filled)**2 / torch.tile(CD_1mA_res, (n_data_1mA, 1))))
+
+        # 0.75mA Experiment
+        t_in = (torch.arange(0.1, tFinal_0_75mA+0.1, 0.1).reshape((-1, 1)).float() - 100.51029687) / 57.74028474
+        Cur = 1e-3*surr_0_75mA_cur(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+        Res = 1e2*surr_0_75mA_res(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+
+        data_filled = fill_data_torch(data_0_75mA_cur, Cur)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Cur, (n_data_0_75mA, 1)) - data_filled)**2 / torch.tile(CD_0_75mA_cur, (n_data_0_75mA, 1))))
+
+        data_filled = fill_data_torch(data_0_75mA_res, Res)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Res, (n_data_0_75mA, 1)) - data_filled)**2 / torch.tile(CD_0_75mA_res, (n_data_0_75mA, 1))))
+
+        # 0.5mA Experiment
+        t_in = (torch.arange(0.1, tFinal_0_5mA+0.1, 0.1).reshape((-1, 1)).float() - 150.48703708) / 86.60500884
+        Cur = 1e-3*surr_0_5mA_cur(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+        Res = 1e2*surr_0_5mA_res(torch.hstack((p_in[:len(t_in), :], t_in))).reshape((1, -1))
+
+        data_filled = fill_data_torch(data_0_5mA_cur, Cur)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Cur, (n_data_0_5mA, 1)) - data_filled)**2 / torch.tile(CD_0_5mA_cur, (n_data_0_5mA, 1))))
+
+        data_filled = fill_data_torch(data_0_5mA_res, Res)
+        log_like = log_like + torch.sum(-0.5 * ((torch.tile(Res, (n_data_0_5mA, 1)) - data_filled)**2 / torch.tile(CD_0_5mA_res, (n_data_0_5mA, 1))))
+
+
+        # trains on only recon loss first
+        if epoch < training_params['epochs']//2:
+            K = 0
+        else:
+            K = 1
+
+        # slowly increase the entropy weighting
+        if epoch < (training_params['epochs']//2 + training_params['epochs']//6) and \
+           epoch > (training_params['epochs']//2):
+            R1 = R1 + 0.1
+            if R1 > R:
+                R1 = R
+        elif epoch > (training_params['epochs']//2 + training_params['epochs']//6):
+            R1 = R
+
+        K = 1
+
+        L = - K*(torch.mean(lpzk) + R1 * torch.mean(lpz0 - ld)) - B * torch.mean(log_like)
+
+        loss = L
+
+        if torch.isnan(loss):
+            print("Loss is nan!")
+            print("LR: ", torch.mean(lr))
+            print("LPZK: ", torch.mean(lpzk))
+            print("LPZ0: ", torch.mean(lpz0))
+            print("LogDet: ", torch.mean(ld))
+
+            sys.exit("Stoped Training")
+
+
+        '''
+        + torch.sum(torch.exp(exp_lim*(z[:,0] - 1)) + torch.exp(-exp_lim*z[:,0]) + \
+                   torch.exp(exp_lim*(z[:,1] - 1)) + torch.exp(-exp_lim*z[:,1]) + \
+                   torch.exp(exp_lim*(z[:,2] - 1)) + torch.exp(-exp_lim*z[:,2]))
+        '''
+
+        loss.backward()
+        Optimizer.step()
+
+        loss_vector[epoch] = loss.cpu().detach().numpy()
+
+        # if np.mod(epoch, training_params['epochs']//20) == 0:
+        if np.mod(epoch, 50) == 0:
+            print('Epoch: ', epoch, ' Loss: ', loss_vector[epoch])
+
+data_nf = 0.
+save_nf(NF.state_dict(), flow_params, training_params, loss_vector, data_nf, surrogate_path, save_nf_path)
+
