@@ -79,20 +79,31 @@ class ECOAT(nn.Module):
         self.dt = dt
         self.Sigma = Sigma
         self.R_film0 = R_film0
+
+        self.VR = VR
+
+        '''
         self.Cv = Cv
         self.K = K
         self.jmin = jmin
-        self.VR = VR
+        '''
+        self.Cv = torch.nn.Parameter(torch.empty(1))
+        self.K = torch.nn.Parameter(torch.empty(1))
+        self.jmin = torch.nn.Parameter(torch.empty(1))
+
+
+        torch.nn.init.normal_(self.a)
 
     def forward(self, t, state):
         # w is the switch state
         # w1 means no update
         # w2 means update
 
-        thk, res, cur, bc_anode, w1, w2 = state
-        bc_anode_out = self.VR
-        thk_out = w1*thk + 1
-        return thk_out
+        thk, res, cur, Q, w = state
+        cur_out = self.Sigma * self.VR / (self.Sigma * res + self.L)
+        Q_out = cur
+        thk_out = w[0, 0]*thk + 1
+        return thk_out, res_out, cur_out, Q_out, torch.zeros_like(w)h
 
 device = 'cuda' if torch.cuda.is_available else 'cpu'
 print('Running on device: ', device)
