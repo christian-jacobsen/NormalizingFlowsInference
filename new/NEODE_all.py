@@ -128,7 +128,7 @@ R_film0 = 0.5
 VR = 1.0
 
 t0 = 0.
-T = 100.
+T = 50.
 dt = 0.1
 
 # generate some data
@@ -141,7 +141,7 @@ del data_model
 model = ECOAT(L, Sigma, R_film0, VR=VR).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr = 5e-2)
 
-epochs = 100
+epochs = 200
 
 loss_v = np.zeros((epochs, ))
 
