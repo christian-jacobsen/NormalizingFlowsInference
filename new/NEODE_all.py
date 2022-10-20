@@ -46,12 +46,13 @@ class ECOAT(nn.Module):
                    torch.tensor([[R_film0], [R_film0]]).to(self.device),
                    torch.tensor([[0.], [0.]]).to(self.device),
                    torch.tensor([[0.], [0.]]).to(self.device),
-                   torch.tensor([[1, 0]]).to(self.device))
+                   torch.tensor([[1, 0]]).to(self.device),
+                   self.K)
 
     def forward(self, t, state):
         # w is the switch state
 
-        thk, res, bc_anode, Q, w = state
+        thk, res, bc_anode, Q, w, k = state
         bc_out = self.VR*(torch.zeros_like(bc_anode) + 1.)
         cur = self.Sigma * bc_anode / (self.Sigma * res + self.L)
         Q_out = cur
@@ -61,7 +62,7 @@ class ECOAT(nn.Module):
         '''
         thk_out = w[0, 0] * 0 + w[0, 1]*(10**(-self.logCv)*(cur - self.jmin))
         res_out = w[0, 0] * 0 + w[0, 1]*(10**(-self.logCv)*self.rho(cur)*(cur - self.jmin))
-        return thk_out, res_out, bc_out, Q_out, torch.zeros_like(w)
+        return thk_out, res_out, bc_out, Q_out, torch.zeros_like(w), torch.zeros_like(k)
 
     def rho(self, j):
         return 8e6*torch.exp(-0.1*j)
@@ -73,15 +74,15 @@ class ECOAT(nn.Module):
     def event(self, t, state):
         # if Q >= Qmin, we output zero or negative value. 
         #   Else output positive
-        thk, res, bc_anode, Q, w = state
-        Qmin = (81/(128*self.beta))**(1/3)*(self.K**(4/3))
+        thk, res, bc_anode, Q, w, k = state
+        Qmin = (81/(128*self.beta))**(1/3)*(k**(4/3))
         return Qmin - Q
 
     def update_state(self, t, state):
         # update the switch w
-        thk, res, bc_anode, Q, w = state
+        thk, res, bc_anode, Q, w, k = state
         w = torch.abs(w - 1) # differentiable binary switch
-        return (thk[-1, :, :], res[-1, :, :], bc_anode[-1, :, :], Q[-1, :, :], w[-1, :, :])
+        return (thk[-1, :, :], res[-1, :, :], bc_anode[-1, :, :], Q[-1, :, :], w[-1, :, :], k)
 
     def get_event_time(self, t0=0.):
         # get the event time
@@ -105,8 +106,8 @@ class ECOAT(nn.Module):
         y1 = self.update_state(0, out1)
         out2 = odeint(self, y1, tv2, method='scipy_solver', options={'solver': 'LSODA'})
 
-        thk1, res1, bc_anode1, _, _ = out1
-        thk2, res2, bc_anode2, _, _ = out2
+        thk1, res1, bc_anode1, _, _, _ = out1
+        thk2, res2, bc_anode2, _, _, _ = out2
         tv = torch.cat((tv1[:-1], tv2[1:]))
 
         #cur = torch.cat((cur1[:-1, :, :], cur2[1:, :, :]), dim=0)
@@ -144,12 +145,15 @@ epochs = 100
 
 loss_v = np.zeros((epochs, ))
 
+model.train()
+
 # train the model
 for epoch in range(epochs):
+    model.zero_grad()
 
     t, cur, res, thk, t_event = model.simulate(T)
 
-    loss = torch.mean((cur_data - cur[:, 0, 0])**2 + 100*(t_event-t_event_data)**2)
+    loss = torch.mean((cur_data - cur[:, 0, 0])**2) #torch.mean(100*(t_event-t_event_data)**2)#
     loss.backward()
 
     print("Epoch: ", epoch, " , Loss: ", loss)
