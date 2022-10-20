@@ -115,7 +115,7 @@ class ECOAT(nn.Module):
         bc_anode = torch.cat((bc_anode1[:-1, :, :], bc_anode2[1:, :, :]), dim=0)
         cur = self.Sigma * bc_anode / (self.Sigma * res + self.L)
 
-        return tv, cur, res, thk
+        return tv, cur, res, thk, t_event
 
 
 device = 'cuda' if torch.cuda.is_available else 'cpu'
@@ -132,8 +132,9 @@ dt = 0.1
 
 # generate some data
 data_model = ECOAT(L, Sigma, R_film0, VR=VR, const=True).to(device)
-t_data, cur_data, res_data, thk_data = data_model.simulate(T)
+t_data, cur_data, res_data, thk_data, t_event_data = data_model.simulate(T)
 cur_data, res_data, thk_data = cur_data[:, 0, 0].detach(), res_data[:, 0, 0].detach(), thk_data[:, 0, 0].detach()
+t_event_data = t_event_data.detach()
 del data_model
 
 model = ECOAT(L, Sigma, R_film0, VR=VR).to(device)
@@ -146,9 +147,9 @@ loss_v = np.zeros((epochs, ))
 # train the model
 for epoch in range(epochs):
 
-    t, cur, res, thk = model.simulate(T)
+    t, cur, res, thk, t_event = model.simulate(T)
 
-    loss = torch.mean((cur_data - cur[:, 0, 0])**2)
+    loss = torch.mean((cur_data - cur[:, 0, 0])**2 + 100*(t_event-t_event_data)**2)
     loss.backward()
 
     print("Epoch: ", epoch, " , Loss: ", loss)
