@@ -126,7 +126,7 @@ class ECOAT(nn.Module):
         bc_anode = torch.cat((bc_anode1[:-1, :, :], bc_anode2[1:, :, :]), dim=0)
         cur = self.Sigma * bc_anode / (self.Sigma * res + self.L)
 
-        return tv, 1e-3*cur, 1e2*res, thk, t_event
+        return tv, 1.6e-3*cur, 1.6e3*res, thk, t_event
 
 
 device = 'cuda' if torch.cuda.is_available else 'cpu'
