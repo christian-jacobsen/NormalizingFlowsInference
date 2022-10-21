@@ -155,7 +155,7 @@ del data_model
 model = ECOAT(L, Sigma, R_film0, VR=VR).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr = 5e-2)
 
-epochs = 1
+epochs = 6
 n_batch = 1
 
 loss_v = np.zeros((epochs, ))
