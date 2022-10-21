@@ -8,7 +8,26 @@ import torch.nn.functional as F
 from torchdiffeq import odeint_adjoint as odeint
 from torchdiffeq import odeint_event
 
+from utils.utils import *
+
 torch.manual_seed(101)
+
+class rho_nn(nn.Module):
+    def __init__(self, nodes, N, act=nn.ReLU()):
+        super().__init__()
+
+        self.fnn = nn.Sequential()
+        self.fnn.add_module('lin0', nn.Linear(1, N))
+        self.fnn.add_module('act0', act)
+        for i in range(1, nodes):
+            self.fnn.add_module('lin'+str(i), nn.Linear(N, N))
+            self.fnn.add_module('act0', act)
+
+        self.fnn.add_module('lin_final', nn.Linear(N, 1))
+        self.add_module('sigmoid_final', nn.Sigmoid())
+
+    def forward(self, j):
+        return self.fnn(j)
 
 
 class ECOAT(nn.Module):
@@ -25,12 +44,7 @@ class ECOAT(nn.Module):
 
         self.VR = torch.tensor([VR]).to(self.device)
 
-
-        '''
-        self.Cv = Cv
-        self.K = K
-        self.jmin = jmin
-        '''
+        self.rho_func = rho_nn(2, 10)
 
         # if const, we use it as a ground truth data generator
         if const:
@@ -56,10 +70,6 @@ class ECOAT(nn.Module):
         bc_out = self.VR*(torch.zeros_like(bc_anode) + 1.)
         cur = self.Sigma * bc_anode / (self.Sigma * res + self.L)
         Q_out = cur
-        '''
-        thk_out = w[0, 0] * 0 + w[0, 1]*(10**(-self.logCv)*F.relu(cur - self.jmin))
-        res_out = w[0, 0] * 0 + w[0, 1]*(10**(-self.logCv)*self.rho(cur)*F.relu(cur - self.jmin))
-        '''
         thk_out = w[0, 0] * 0 + w[0, 1]*(10**(-self.logCv)*(cur - self.jmin))
         res_out = w[0, 0] * 0 + w[0, 1]*(10**(-self.logCv)*self.rho(cur)*(cur - self.jmin))
         return thk_out, res_out, bc_out, Q_out, torch.zeros_like(w), torch.zeros_like(k)
@@ -67,6 +77,7 @@ class ECOAT(nn.Module):
     def rho(self, j):
         return 8e6*torch.exp(-0.1*j)
         #return self.limit(2e6, 8e6*torch.exp(-0.1*j), 1e9)
+        #return 6e6*self.rho_func(j) + 2e6
 
     def limit(self, val, lim, scale):
         return (val - lim) / (1 + torch.exp(-scale*(val-lim))) + lim
@@ -110,7 +121,6 @@ class ECOAT(nn.Module):
         thk2, res2, bc_anode2, _, _, _ = out2
         tv = torch.cat((tv1[:-1], tv2[1:]))
 
-        #cur = torch.cat((cur1[:-1, :, :], cur2[1:, :, :]), dim=0)
         res = torch.cat((res1[:-1, :, :], res2[1:, :, :]), dim=0)
         thk = torch.cat((thk1[:-1, :, :], thk2[1:, :, :]), dim=0)
         bc_anode = torch.cat((bc_anode1[:-1, :, :], bc_anode2[1:, :, :]), dim=0)
@@ -131,17 +141,22 @@ t0 = 0.
 T = 50.
 dt = 0.1
 
-# generate some data
+# generate some data or load the data
+data_cur, var_cur, data_res, var_res, t_final, n_trials = load_all_data_torch('./data/experimental')
+T = t_final[0].float()
+'''
 data_model = ECOAT(L, Sigma, R_film0, VR=VR, const=True).to(device)
 t_data, cur_data, res_data, thk_data, t_event_data = data_model.simulate(T)
 cur_data, res_data, thk_data = cur_data[:, 0, 0].detach(), res_data[:, 0, 0].detach(), thk_data[:, 0, 0].detach()
 t_event_data = t_event_data.detach()
 del data_model
+'''
 
 model = ECOAT(L, Sigma, R_film0, VR=VR).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr = 5e-2)
 
-epochs = 200
+epochs = 1
+n_batch = 1
 
 loss_v = np.zeros((epochs, ))
 
@@ -152,8 +167,12 @@ for epoch in range(epochs):
     model.zero_grad()
 
     t, cur, res, thk, t_event = model.simulate(T)
+    data_filled = fill_data_torch(data_cur[0], cur[:, 0, :].reshape(1, -1))
+    cur1 = torch.transpose(cur, 0, 2)
+    #print(np.shape(cur))
+    #print(np.shape(data_filled))
 
-    loss = torch.mean((cur_data - cur[:, 0, 0])**2) #torch.mean(100*(t_event-t_event_data)**2)#
+    loss = torch.mean((torch.tile(data_filled.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(cur1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
     loss.backward()
 
     print("Epoch: ", epoch, " , Loss: ", loss)
@@ -166,29 +185,30 @@ for epoch in range(epochs):
         res_init = res[:, 0, 0].cpu().detach().numpy()
         thk_init = thk[:, 0, 0].cpu().detach().numpy()
 
-cur_data = cur_data.cpu().numpy()
-res_data = res_data.cpu().numpy()
-thk_data = thk_data.cpu().numpy()
+#res_data = res_data.cpu().numpy()
+#thk_data = thk_data.cpu().numpy()
 
 t, cur = t.cpu().detach().numpy(), cur.cpu().detach().numpy()
 res, thk = res.cpu().detach().numpy(), thk.cpu().detach().numpy()
 
 plt.figure(1, figsize=(25, 8))
 plt.subplot(1, 3, 1)
+for i in range(n_trials[0]):
+    plt.plot(t, data_cur[0][i, :].cpu().numpy(), 'k.')
 plt.plot(t, cur_init, 'b', label='Initial')
 plt.plot(t, cur[:, 0, 0], 'r', label='Final')
-plt.plot(t, cur_data, 'k.', label='Data')
 plt.legend()
 plt.title('Current')
 plt.subplot(1, 3, 2)
 plt.plot(t, thk_init, 'b', label='Initial')
 plt.plot(t, thk[:, 0, 0], 'r', label='Final')
-plt.plot(t, thk_data, 'k.', label='Data')
+#plt.plot(t, thk_data, 'k.', label='Data')
 plt.title('Thickness')
 plt.subplot(1, 3, 3)
+for i in range(n_trials[0]):
+    plt.plot(t, data_res[0][i, :].cpu().numpy(), 'k.')
 plt.plot(t, res_init, 'b', label='Initial')
 plt.plot(t, res[:, 0, 0], 'r', label='Final')
-plt.plot(t, res_data, 'k.', label='Data')
 plt.title('Resistance')
 plt.savefig('ecoat_neode_test.png')
 

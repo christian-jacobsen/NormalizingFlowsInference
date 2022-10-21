@@ -2,6 +2,7 @@ import torch
 import sys
 import pandas as pd
 import numpy as np
+import os.path as osp
 
 sys.path.append('../')
 
@@ -18,6 +19,43 @@ def load_data(load_path, sheet, n_data):
     std = np.reshape(dataM[:, 2], (1, -1))
 
     return data, std
+
+def load_all_data_torch(load_path):
+    # experiments are: VR: 1V, 0.5V, 0.125V
+    #                  CC: 1mA, 0.75mA, 0.5mA
+    # define number of trials in each experiment
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    n_data = torch.tensor([13, 12, 12, 10, 10, 10])
+    t_final = torch.tensor([239, 477, 639, 240, 160, 80])
+    load_paths = [osp.join(load_path, 'VR_1V.xlsx'),
+                  osp.join(load_path, 'VR_0.5V.xlsx'),
+                  osp.join(load_path, 'VR_0.125V.xlsx'),
+                  osp.join(load_path, 'CC_1mA.xlsx'),
+                  osp.join(load_path, 'CC_0.75mA.xlsx'),
+                  osp.join(load_path, 'CC_0.5mA.xlsx')]
+    sheet_names_cur = ['VR_1V_Current', 'VR_0.5V_Current', 'VR_0.125V_Current',
+                       'CC_1mA_Current', 'CC_0.75mA_Current', 'CC_0.5mA_Current']
+    sheet_names_res = ['VR_1V_Resistance', 'VR_0.5V_Resistance', 'VR_0.125V_Resistance',
+                       'CC_1mA_Current', 'CC_0.75mA_Current', 'CC_0.5mA_Current']
+
+    mean_cur = []
+    var_cur = []
+    mean_res = []
+    var_res = []
+
+    for i in range(6):
+        # load the current data
+        m_temp, sd_temp = load_data(load_paths[i], sheet_names_cur[i], n_data[i])
+        sd_temp = sd_temp**2
+        mean_cur.append(torch.from_numpy(m_temp[:, 0:(10*int(t_final[i]) + 1)]).float().to(device))
+        var_cur.append(torch.from_numpy(sd_temp[:, 0:(10*int(t_final[i]) + 1)]).float().to(device))
+        # load the resistance data
+        m_temp, sd_temp = load_data(load_paths[i], sheet_names_res[i], n_data[i])
+        sd_temp = sd_temp**2
+        mean_res.append(torch.from_numpy(m_temp[:, 0:(10*int(t_final[i]) + 1)]).float().to(device))
+        var_res.append(torch.from_numpy(sd_temp[:, 0:(10*int(t_final[i]) + 1)]).float().to(device))
+
+    return mean_cur, var_cur, mean_res, var_res, t_final, n_data
 
 def save_surrogate(surrogate_params, surrogate_model, forward_model, training_params, training_loss, data, save_dir, file_name):
     # save the surrogate model with parameters surrogate_params and configuration
