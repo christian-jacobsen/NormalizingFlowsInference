@@ -112,10 +112,6 @@ class ECOAT(nn.Module):
         tv1 = torch.cat([tv1, t_event.reshape(-1)])
         tv2 = torch.arange(float(tv1[-2])+0.1, T+1e-4, dt).to(self.device)
         tv2 = torch.cat([t_event.reshape(-1), tv2])
-        print('shape tv1: ', np.shape(tv1))
-        print(tv1[0], ' ', tv1[-2], ' ', tv1[-1])
-        print('shape tv2: ', np.shape(tv2))
-        print(tv2[0], ' ', tv2[1], ' ', tv2[-1])
 
         out1 = odeint(self, self.y0, tv1, method='scipy_solver', options={'solver': 'LSODA'})
         y1 = self.update_state(0, out1)
@@ -159,7 +155,7 @@ del data_model
 model = ECOAT(L, Sigma, R_film0, VR=VR).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr = 5e-2)
 
-epochs = 10
+epochs = 100
 n_batch = 1
 
 loss_v = np.zeros((epochs, ))
@@ -171,15 +167,13 @@ for epoch in range(epochs):
     model.zero_grad()
 
     t, cur, res, thk, t_event = model.simulate(T)
-    print('event time: ', t_event)
-    print(np.shape(cur))
-    print(np.shape(data_cur[0]))
-    data_filled = fill_data_torch(data_cur[0], cur[:, 0, :].reshape(1, -1))
+    data_filled_cur = fill_data_torch(data_cur[0], cur[:, 0, :].reshape(1, -1))
+    data_filled_res = fill_data_torch(data_res[0], res[:, 0, :].reshape(1, -1))
     cur1 = torch.transpose(cur, 0, 2)
-    #print(np.shape(cur))
-    #print(np.shape(data_filled))
+    res1 = torch.transpose(res, 0, 2)
 
-    loss = torch.mean((torch.tile(data_filled.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(cur1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
+    loss = torch.mean((torch.tile(data_filled_cur.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(cur1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
+    loss = loss + torch.mean((torch.tile(data_filled_res.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(res1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
     loss.backward()
 
     print("Epoch: ", epoch, " , Loss: ", loss)
@@ -194,6 +188,10 @@ for epoch in range(epochs):
 
 #res_data = res_data.cpu().numpy()
 #thk_data = thk_data.cpu().numpy()
+print('Final Param Values:')
+print('K: ', model.K)
+print('logCv: ', model.logCv)
+print('jmin: ', model.jmin)
 
 t, cur = t.cpu().detach().numpy(), cur.cpu().detach().numpy()
 res, thk = res.cpu().detach().numpy(), thk.cpu().detach().numpy()
