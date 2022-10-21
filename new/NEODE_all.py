@@ -110,8 +110,12 @@ class ECOAT(nn.Module):
 
         tv1 = torch.arange(t0, float(t_event), dt).to(self.device)
         tv1 = torch.cat([tv1, t_event.reshape(-1)])
-        tv2 = torch.arange(float(tv1[-2])+0.1, T+1e-6, dt).to(self.device)
+        tv2 = torch.arange(float(tv1[-2])+0.1, T+1e-4, dt).to(self.device)
         tv2 = torch.cat([t_event.reshape(-1), tv2])
+        print('shape tv1: ', np.shape(tv1))
+        print(tv1[0], ' ', tv1[-2], ' ', tv1[-1])
+        print('shape tv2: ', np.shape(tv2))
+        print(tv2[0], ' ', tv2[1], ' ', tv2[-1])
 
         out1 = odeint(self, self.y0, tv1, method='scipy_solver', options={'solver': 'LSODA'})
         y1 = self.update_state(0, out1)
@@ -155,7 +159,7 @@ del data_model
 model = ECOAT(L, Sigma, R_film0, VR=VR).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr = 5e-2)
 
-epochs = 6
+epochs = 10
 n_batch = 1
 
 loss_v = np.zeros((epochs, ))
@@ -167,6 +171,9 @@ for epoch in range(epochs):
     model.zero_grad()
 
     t, cur, res, thk, t_event = model.simulate(T)
+    print('event time: ', t_event)
+    print(np.shape(cur))
+    print(np.shape(data_cur[0]))
     data_filled = fill_data_torch(data_cur[0], cur[:, 0, :].reshape(1, -1))
     cur1 = torch.transpose(cur, 0, 2)
     #print(np.shape(cur))
