@@ -24,7 +24,7 @@ class rho_nn(nn.Module):
             self.fnn.add_module('act0', act)
 
         self.fnn.add_module('lin_final', nn.Linear(N, 1))
-        self.add_module('sigmoid_final', nn.Sigmoid())
+        self.add_module('relu_final', nn.ReLU())
 
     def forward(self, j):
         return self.fnn(j)
@@ -75,9 +75,9 @@ class ECOAT(nn.Module):
         return thk_out, res_out, bc_out, Q_out, torch.zeros_like(w), torch.zeros_like(k)
 
     def rho(self, j):
-        return 8e6*torch.exp(-0.1*j)
+        #return 8e6*torch.exp(-0.1*j)
         #return self.limit(2e6, 8e6*torch.exp(-0.1*j), 1e9)
-        #return 6e6*self.rho_func(j) + 2e6
+        return 7.5e6*torch.exp(-self.rho_func(j)) + 1e6
 
     def limit(self, val, lim, scale):
         return (val - lim) / (1 + torch.exp(-scale*(val-lim))) + lim
@@ -155,7 +155,7 @@ del data_model
 model = ECOAT(L, Sigma, R_film0, VR=VR).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr = 5e-2)
 
-epochs = 100
+epochs = 1
 n_batch = 1
 
 loss_v = np.zeros((epochs, ))
@@ -173,7 +173,7 @@ for epoch in range(epochs):
     res1 = torch.transpose(res, 0, 2)
 
     loss = torch.mean((torch.tile(data_filled_cur.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(cur1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
-    loss = loss + torch.mean((torch.tile(data_filled_res.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(res1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
+    #loss = loss + torch.mean((torch.tile(data_filled_res.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(res1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
     loss.backward()
 
     print("Epoch: ", epoch, " , Loss: ", loss)
@@ -222,3 +222,13 @@ plt.plot(loss_v)
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 plt.savefig('loss_curve.png')
+
+plt.figure(3)
+j_v = torch.linspace(0, 20, 1000).reshape(-1, 1).to(device)
+rho_v = model.rho(j_v)
+plt.plot(j_v.cpu().detach().numpy(), rho_v.cpu().detach().numpy())
+plt.xlabel('j')
+plt.ylabel('rho(j)')
+plt.title('FNN rho(j)')
+plt.savefig('fnn_rho.png')
+
