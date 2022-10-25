@@ -155,7 +155,7 @@ del data_model
 model = ECOAT(L, Sigma, R_film0, VR=VR).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr = 1e-2)
 
-epochs = 100
+epochs = 500
 n_batch = 1
 
 loss_v = np.zeros((epochs, ))
@@ -173,7 +173,7 @@ for epoch in range(epochs):
     res1 = torch.transpose(res, 0, 2)
 
     loss = torch.mean((torch.tile(data_filled_cur.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(cur1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
-    #loss = loss + torch.mean((torch.tile(data_filled_res.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(res1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
+    loss = loss + 1e-5*torch.mean((torch.tile(data_filled_res.unsqueeze(0), (n_batch, 1, 1)) - torch.tile(res1[:, 0, :].unsqueeze(1), (1, int(n_trials[0]), 1)))**2) #torch.mean(100*(t_event-t_event_data)**2)#
     loss.backward()
 
     print("Epoch: ", epoch, " , Loss: ", loss)
