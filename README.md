@@ -1,9 +1,4 @@
-# NormalizingFlowsInference
+# Enhancing Dynamical System Modeling through Interpretable  Machine Learning Augmentations: A Case Study in Cathodic Electrophoretic Deposition
 
-## Training a surrogate model
-To train a surrogate model, update `inputs/inputs_surrogate.py` with the desired surrogate model and training parameters, than run `python3 train_surrogate.py`
+This repository contains the code following our manuscript titled "Enhancing Dynamical System Modeling through Interpretable  Machine Learning Augmentations: A Case Study in Cathodic Electrophoretic Deposition".
 
-## Training Normalizing flow model for inference
-to train a normalizing flow model for inference, follow a similar procedure to the above method. 
-
-## Post processing
